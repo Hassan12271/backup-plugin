@@ -1,0 +1,359 @@
+/* My WP Migration – admin screen. */
+
+.mwpm {
+	--mwpm-accent: #2271b1;
+	--mwpm-accent-soft: #f0f6fc;
+	--mwpm-success: #00a32a;
+	--mwpm-danger: #d63638;
+	--mwpm-border: #dcdcde;
+	--mwpm-muted: #646970;
+	max-width: 960px;
+}
+
+.mwpm-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.mwpm-title .dashicons {
+	font-size: 30px;
+	width: 30px;
+	height: 30px;
+	color: var(--mwpm-accent);
+}
+
+.mwpm-tabs {
+	margin-bottom: 0;
+}
+
+.mwpm-tabs .nav-tab .dashicons {
+	font-size: 17px;
+	width: 17px;
+	height: 17px;
+	vertical-align: text-bottom;
+}
+
+.mwpm-count {
+	display: inline-block;
+	min-width: 18px;
+	padding: 0 6px;
+	border-radius: 9px;
+	background: var(--mwpm-muted);
+	color: #fff;
+	font-size: 11px;
+	line-height: 18px;
+	text-align: center;
+}
+
+.mwpm-card {
+	background: #fff;
+	border: 1px solid var(--mwpm-border);
+	border-top: 0;
+	padding: 24px 28px 28px;
+}
+
+.mwpm-card h2 {
+	margin-top: 0;
+	font-size: 1.4em;
+}
+
+.mwpm-card-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.mwpm-card-head h2 {
+	margin: 0;
+}
+
+.mwpm-card .button .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	vertical-align: text-bottom;
+	margin-top: 1px;
+}
+
+.mwpm-lead {
+	font-size: 14px;
+	color: var(--mwpm-muted);
+	max-width: 640px;
+}
+
+/* Export */
+
+.mwpm-advanced {
+	margin: 20px 0 24px;
+	border: 1px solid var(--mwpm-border);
+	border-radius: 4px;
+}
+
+.mwpm-advanced summary {
+	cursor: pointer;
+	padding: 12px 16px;
+	font-weight: 600;
+}
+
+.mwpm-advanced[open] summary {
+	border-bottom: 1px solid var(--mwpm-border);
+}
+
+.mwpm-options {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 10px 24px;
+	padding: 16px;
+}
+
+.mwpm-option {
+	display: flex;
+	gap: 8px;
+	align-items: flex-start;
+}
+
+.mwpm-option input {
+	margin-top: 2px;
+}
+
+.mwpm-option small {
+	display: block;
+	color: var(--mwpm-muted);
+}
+
+.mwpm .button-hero.mwpm-export-btn .dashicons {
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+	vertical-align: middle;
+	margin-top: -3px;
+}
+
+/* Import */
+
+.mwpm-warning {
+	display: flex;
+	gap: 10px;
+	align-items: flex-start;
+	background: #fcf9e8;
+	border-left: 4px solid #dba617;
+	padding: 10px 14px;
+	margin-bottom: 20px;
+}
+
+.mwpm-warning p {
+	margin: 0;
+}
+
+.mwpm-warning .dashicons {
+	color: #dba617;
+}
+
+.mwpm-drop {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 44px 20px;
+	border: 2px dashed #c3c4c7;
+	border-radius: 8px;
+	background: #fafafa;
+	text-align: center;
+	cursor: pointer;
+	transition: border-color .15s, background .15s;
+}
+
+.mwpm-drop:hover,
+.mwpm-drop.is-over,
+.mwpm-drop:focus-within {
+	border-color: var(--mwpm-accent);
+	background: var(--mwpm-accent-soft);
+}
+
+.mwpm-drop input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+}
+
+.mwpm-drop .dashicons {
+	font-size: 48px;
+	width: 48px;
+	height: 48px;
+	color: var(--mwpm-accent);
+}
+
+.mwpm-drop strong {
+	font-size: 16px;
+}
+
+.mwpm-drop u {
+	color: var(--mwpm-accent);
+}
+
+.mwpm-drop small {
+	color: var(--mwpm-muted);
+}
+
+/* Backups */
+
+.mwpm-table td {
+	vertical-align: middle;
+}
+
+.mwpm-file {
+	word-break: break-all;
+}
+
+.mwpm-file .dashicons {
+	color: var(--mwpm-muted);
+}
+
+.mwpm-actions-col {
+	text-align: right;
+	white-space: nowrap;
+}
+
+.mwpm-actions-col .button-link.mwpm-delete {
+	color: var(--mwpm-danger);
+	margin-left: 6px;
+}
+
+.mwpm-empty {
+	text-align: center;
+	padding: 36px 0;
+	color: var(--mwpm-muted);
+}
+
+.mwpm-empty .dashicons {
+	font-size: 40px;
+	width: 40px;
+	height: 40px;
+}
+
+.mwpm-system {
+	color: var(--mwpm-muted);
+	font-size: 12px;
+}
+
+/* Progress modal */
+
+.mwpm-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: rgba(0, 0, 0, .55);
+}
+
+.mwpm-modal[hidden] {
+	display: none;
+}
+
+.mwpm-dialog {
+	width: 100%;
+	max-width: 520px;
+	background: #fff;
+	border-radius: 8px;
+	padding: 28px;
+	text-align: center;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, .25);
+}
+
+.mwpm-dialog h2 {
+	margin: 0 0 18px;
+}
+
+.mwpm-icon {
+	display: none;
+	font-size: 48px;
+	width: 48px;
+	height: 48px;
+	margin-bottom: 8px;
+}
+
+.mwpm-modal.is-done .mwpm-icon,
+.mwpm-modal.is-error .mwpm-icon {
+	display: inline-block;
+}
+
+.mwpm-modal.is-done .mwpm-icon {
+	color: var(--mwpm-success);
+}
+
+.mwpm-modal.is-error .mwpm-icon {
+	color: var(--mwpm-danger);
+}
+
+.mwpm-bar {
+	height: 12px;
+	border-radius: 6px;
+	background: #f0f0f1;
+	overflow: hidden;
+}
+
+.mwpm-bar span {
+	display: block;
+	height: 100%;
+	width: 0;
+	background: var(--mwpm-accent);
+	border-radius: 6px;
+	transition: width .3s ease;
+}
+
+.mwpm-modal.is-done .mwpm-bar span {
+	background: var(--mwpm-success);
+}
+
+.mwpm-modal.is-error .mwpm-bar span {
+	background: var(--mwpm-danger);
+}
+
+.mwpm-percent {
+	font-size: 20px;
+	font-weight: 600;
+	margin: 12px 0 4px;
+}
+
+.mwpm-modal.is-done .mwpm-percent,
+.mwpm-modal.is-error .mwpm-percent {
+	display: none;
+}
+
+.mwpm-status {
+	color: var(--mwpm-muted);
+	min-height: 2.6em;
+	word-break: break-word;
+}
+
+.mwpm-modal.is-error .mwpm-status {
+	color: var(--mwpm-danger);
+}
+
+.mwpm-buttons {
+	display: flex;
+	justify-content: center;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.mwpm-buttons:empty {
+	display: none;
+}
+
+@media (max-width: 600px) {
+	.mwpm-card {
+		padding: 16px;
+	}
+
+	.mwpm-actions-col {
+		white-space: normal;
+	}
+}
