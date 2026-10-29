@@ -188,6 +188,7 @@ class MWPM_Import {
 
 		return array(
 			'done'     => false,
+			'stage'    => $stage,
 			'progress' => round( $progress, 1 ),
 			'message'  => $message,
 		);

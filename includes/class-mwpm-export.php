@@ -136,6 +136,7 @@ class MWPM_Export {
 
 		return array(
 			'done'     => false,
+			'stage'    => $this->state['stage'],
 			'progress' => round( $progress, 1 ),
 			'message'  => $message,
 		);
@@ -173,7 +174,7 @@ class MWPM_Export {
 			throw new Exception( 'Could not write the database dump file.' );
 		}
 		if ( 0 === $db['pos'] ) {
-			MWPM_Archive::write( $fh, '-- My WP Migration ' . MWPM_VERSION . " database dump\n" );
+			MWPM_Archive::write( $fh, '-- SiteShift Migration ' . MWPM_VERSION . " database dump\n" );
 		}
 
 		while ( $db['index'] < count( $db['tables'] ) ) {

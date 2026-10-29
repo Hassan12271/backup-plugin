@@ -1,4 +1,5 @@
-=== My WP Migration ===
+=== SiteShift Migration ===
+Contributors: Hassan Raza
 Requires at least: 5.3
 Requires PHP: 7.0
 Stable tag: 1.0.0
@@ -22,8 +23,8 @@ Backup, export and import (migrate) a complete WordPress site. No size limits, n
 
 == Moving a site ==
 
-1. Old site: install the plugin, go to "WP Migration" → Export → "Export site" and download the file.
-2. New site: install a fresh WordPress, install this plugin, go to "WP Migration" → Import
+1. Old site: install the plugin, go to "SiteShift" → Export → "Export site" and download the file.
+2. New site: install a fresh WordPress, install this plugin, go to "SiteShift" → Import
    and drop the file.
 3. When it finishes, log in with the username/password of the OLD site and open
    Settings → Permalinks → Save.

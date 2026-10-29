@@ -1,10 +1,11 @@
 <?php
 /**
- * Plugin Name:       My WP Migration
+ * Plugin Name:       SiteShift Migration
  * Description:       Backup, export and import (migrate) your complete WordPress site — database, media, themes and plugins. No size limits, works on any host.
  * Version:           1.0.0
  * Requires at least: 5.3
  * Requires PHP:      7.0
+ * Author:            Hassan Raza
  * License:           GPL-2.0-or-later
  * Text Domain:       my-wp-migration
  */

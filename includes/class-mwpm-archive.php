@@ -33,7 +33,7 @@ class MWPM_Archive {
 
 	public static function check_magic( $fh ) {
 		if ( self::MAGIC !== fread( $fh, strlen( self::MAGIC ) ) ) {
-			throw new Exception( 'This is not a valid My WP Migration (.mwpm) backup file.' );
+			throw new Exception( 'This is not a valid SiteShift Migration (.mwpm) backup file.' );
 		}
 	}
 
