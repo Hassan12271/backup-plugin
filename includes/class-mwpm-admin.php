@@ -20,6 +20,8 @@ class MWPM_Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'menu' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_filter( 'plugin_action_links_' . plugin_basename( MWPM_FILE ), array( __CLASS__, 'action_links' ) );
+		add_filter( 'plugin_row_meta', array( __CLASS__, 'row_meta' ), 10, 2 );
+		add_action( 'admin_footer-plugins.php', array( __CLASS__, 'plugins_footer' ) );
 		add_action( 'admin_post_mwpm_download', array( __CLASS__, 'download' ) );
 
 		foreach ( array( 'export_start', 'import_start', 'delete' ) as $action ) {
@@ -38,6 +40,19 @@ class MWPM_Admin {
 	public static function action_links( $links ) {
 		array_unshift( $links, '<a href="' . esc_url( admin_url( 'admin.php?page=' . self::SLUG ) ) . '">Backup / Migrate</a>' );
 		return $links;
+	}
+
+	public static function row_meta( $links, $file ) {
+		if ( plugin_basename( MWPM_FILE ) === $file ) {
+			$links[] = '<a href="https://www.hassanraxa.com" target="_blank" rel="noopener noreferrer">Hassan Raxa</a>';
+		}
+		return $links;
+	}
+
+	/** Force the plugin author website to open in a new tab. */
+	public static function plugins_footer() {
+		$plugin = plugin_basename( MWPM_FILE );
+		echo '<script>document.querySelectorAll(\'tr[data-plugin="' . esc_js( $plugin ) . '"] a[href*="hassanraxa.com"]\').forEach(function(a){a.target="_blank";a.rel="noopener noreferrer";});</script>';
 	}
 
 	public static function chunk_size() {

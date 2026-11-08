@@ -150,6 +150,7 @@ class MWPM_DB {
 	}
 
 	public static function supports_collation( $name ) {
-		return null !== self::value( 'SHOW COLLATION LIKE ' . self::quote( $name ) );
+		// Escape LIKE wildcards — bare "_" would match any character and lie about support.
+		return null !== self::value( 'SHOW COLLATION LIKE ' . self::quote( addcslashes( $name, '%_\\' ) ) );
 	}
 }

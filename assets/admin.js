@@ -297,16 +297,19 @@
 		var box = $('.mwpm-buttons', modal);
 		box.innerHTML = '';
 		buttons.forEach(function (b, i) {
-			var el = document.createElement(b.href ? 'a' : 'button');
+			var el = document.createElement(b.href && !b.download ? 'a' : 'button');
 			el.className = 'mwpm-btn ' + (b.primary ? 'mwpm-btn-primary' : 'mwpm-btn-secondary');
 			el.textContent = b.label;
-			if (b.href) {
+			if (b.download && b.href) {
+				el.type = 'button';
+				// admin-post.php streams the file — <a download> is unreliable here.
+				el.addEventListener('click', function () {
+					window.location.href = b.href;
+				});
+			} else if (b.href) {
 				el.href = b.href;
-				if (b.download) {
-					el.setAttribute('download', '');
-					el.target = '_blank';
-					el.rel = 'noopener';
-				}
+				el.target = '_blank';
+				el.rel = 'noopener noreferrer';
 			} else {
 				el.type = 'button';
 			}

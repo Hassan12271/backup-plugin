@@ -327,11 +327,13 @@ class MWPM_Import {
 	private function step_db_import() {
 		$imp =& $this->state['imp'];
 
+		// Always refresh fixes — a resumed job may still carry an old/empty list.
+		$imp['fixes'] = $this->collation_fixes();
+
 		if ( ! $imp['started'] ) {
 			foreach ( MWPM_DB::tables( self::TEMP_PREFIX ) as $table ) {
 				MWPM_DB::query( 'DROP TABLE IF EXISTS ' . MWPM_DB::ident( $table ) );
 			}
-			$imp['fixes']   = $this->collation_fixes();
 			$imp['started'] = true;
 		}
 		$this->session();
@@ -359,8 +361,8 @@ class MWPM_Import {
 	}
 
 	/**
-	 * Runs one dump statement. CREATE TABLE is retried with progressively
-	 * safer charset/collation rewrites so unknown-collation hosts never abort.
+	 * Runs one dump statement. CREATE TABLE is retried with safer charset
+	 * rewrites if the host rejects utf8mb3 / engine options.
 	 */
 	private function run_sql( $sql ) {
 		try {
@@ -372,25 +374,12 @@ class MWPM_Import {
 			}
 		}
 
-		$fallbacks = array(
-			array(
-				array( '/COLLATE[= ]?[\w]+/', '' ),
-				array( '/DEFAULT CHARSET[= ]?[\w]+/', 'DEFAULT CHARSET=utf8mb4' ),
-				array( '/CHARSET[= ]?utf8mb[34]/', 'CHARSET=utf8mb4' ),
-				array( '/utf8mb[34]/', 'utf8mb4' ),
-			),
-			array(
-				array( '/COLLATE[= ]?[\w]+/', '' ),
-				array( '/DEFAULT CHARSET[= ]?[\w]+/', 'DEFAULT CHARSET=utf8' ),
-				array( '/CHARSET[= ]?utf8mb[34]/', 'CHARSET=utf8' ),
-				array( '/utf8mb[34]/', 'utf8' ),
-			),
+		$retries = array(
+			preg_replace( '/\butf8mb3\b/', 'utf8mb4', $sql ),
+			preg_replace( '/\butf8mb3\b/', 'utf8', $sql ),
 		);
-		foreach ( $fallbacks as $fixes ) {
-			$retry = $sql;
-			foreach ( $fixes as $fix ) {
-				$retry = preg_replace( $fix[0], $fix[1], $retry );
-			}
+		foreach ( $retries as $retry ) {
+			$retry = preg_replace( '/\s+ROW_FORMAT=\w+/i', '', $retry );
 			$retry = preg_replace( '/\s+/', ' ', $retry );
 			try {
 				MWPM_DB::query( $retry );
@@ -400,20 +389,23 @@ class MWPM_Import {
 			}
 		}
 
-		// Last resort: strip ENGINE/ROW_FORMAT quirks and force a plain InnoDB table.
 		$retry = preg_replace( '/\s+ROW_FORMAT=\w+/i', '', $sql );
 		$retry = preg_replace( '/\s+ENGINE=\w+/i', ' ENGINE=InnoDB', $retry );
-		foreach ( $fallbacks[1] as $fix ) {
-			$retry = preg_replace( $fix[0], $fix[1], $retry );
-		}
-		MWPM_DB::query( $retry );
+		$retry = preg_replace( '/\butf8mb[34]\b/', 'utf8', $retry );
+		MWPM_DB::query( preg_replace( '/\s+/', ' ', $retry ) );
 	}
 
 	/**
-	 * Points a dump statement at the temporary tables and fixes collations
-	 * this MySQL/MariaDB server does not know.
+	 * Points a dump statement at the temporary tables and strips every
+	 * COLLATE clause so MariaDB/MySQL-8-only names never reach the server.
 	 */
 	private function prepare_sql( $sql ) {
+		// Strip BEFORE anything else — unknown collations must never reach MySQL,
+		// even if the placeholder rewrite below does not match for any reason.
+		if ( 0 === strncmp( $sql, 'CREATE TABLE', 12 ) ) {
+			$sql = $this->strip_collations( $sql );
+		}
+
 		$placeholder = MWPM_Export::PLACEHOLDER;
 		foreach ( array( 'REPLACE INTO `', 'INSERT INTO `', 'DROP TABLE IF EXISTS `', 'CREATE TABLE `' ) as $start ) {
 			$head = $start . $placeholder;
@@ -423,38 +415,35 @@ class MWPM_Import {
 			$sql = $start . self::TEMP_PREFIX . substr( $sql, strlen( $head ) );
 			if ( 'CREATE TABLE `' === $start ) {
 				$sql = str_replace( 'REFERENCES `' . $placeholder, 'REFERENCES `' . self::TEMP_PREFIX, $sql );
-				foreach ( $this->state['imp']['fixes'] as $fix ) {
-					$sql = preg_replace( $fix[0], $fix[1], $sql );
-				}
 			}
 			break;
 		}
 		return $sql;
 	}
 
-	private function collation_fixes() {
-		if ( ! MWPM_DB::supports_collation( 'utf8mb4_general_ci' ) ) {
-			return array(
-				array( '/utf8mb[34]_(0900|uca1400)_\w+|utf8mb[34]_unicode_520_ci/', 'utf8_general_ci' ),
-				array( '/utf8mb[34]/', 'utf8' ),
-			);
+	/**
+	 * Deletes every COLLATE clause and any leftover 0900/uca1400 identifiers.
+	 * MySQL then uses the charset default — unknown-collation errors become impossible.
+	 */
+	private function strip_collations( $sql ) {
+		$sql = preg_replace( '/\s*COLLATE\s*=?\s*[`\']?[a-z0-9_]+[`\']?/i', '', $sql );
+		$sql = preg_replace( '/\butf8mb[34]_(?:0900|uca1400)_[a-z0-9_]+/i', '', $sql );
+		foreach ( $this->state['imp']['fixes'] as $fix ) {
+			$sql = preg_replace( $fix[0], $fix[1], $sql );
 		}
+		return $sql;
+	}
 
+	/**
+	 * Extra charset rewrites for hosts that only know the legacy "utf8" alias.
+	 */
+	private function collation_fixes() {
 		$fixes = array();
-		foreach ( array( 'utf8mb4', 'utf8mb3' ) as $charset ) {
-			$fallback = MWPM_DB::supports_collation( $charset . '_unicode_520_ci' ) ? $charset . '_unicode_520_ci' : $charset . '_unicode_ci';
-			foreach ( array( '0900', 'uca1400' ) as $family ) {
-				if ( ! MWPM_DB::supports_collation( $charset . '_' . $family . '_ai_ci' ) ) {
-					$fixes[] = array( '/' . $charset . '_' . $family . '_\w+/', $fallback );
-				}
-			}
-			if ( $charset . '_unicode_ci' === $fallback ) {
-				$fixes[] = array( '/' . $charset . '_unicode_520_ci/', $charset . '_unicode_ci' );
-			}
-		}
-		// Older MySQL (5.7) only knows the utf8mb3 charset by its "utf8" alias.
 		if ( ! MWPM_DB::supports_collation( 'utf8mb3_general_ci' ) ) {
-			$fixes[] = array( '/utf8mb3/', 'utf8' );
+			$fixes[] = array( '/\butf8mb3\b/', 'utf8' );
+		}
+		if ( ! MWPM_DB::supports_collation( 'utf8mb4_general_ci' ) ) {
+			$fixes[] = array( '/\butf8mb4\b/', 'utf8' );
 		}
 		return $fixes;
 	}
