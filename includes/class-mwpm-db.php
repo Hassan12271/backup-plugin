@@ -23,6 +23,7 @@ class MWPM_DB {
 	 */
 	public static function query( $sql ) {
 		global $wpdb;
+		$sql  = self::sanitize_sql( $sql );
 		$link = self::link();
 		if ( $link ) {
 			try {
@@ -40,6 +41,34 @@ class MWPM_DB {
 			throw new Exception( 'Database error: ' . $wpdb->last_error );
 		}
 		return true;
+	}
+
+	/**
+	 * Last-line defence: strip unknown MariaDB/MySQL-8 collations from DDL
+	 * so import never dies with "Unknown collation: utf8mb3_uca1400_…".
+	 */
+	public static function sanitize_sql( $sql ) {
+		if ( ! is_string( $sql ) || ( false === stripos( $sql, 'COLLATE' ) && false === stripos( $sql, 'uca1400' ) && false === stripos( $sql, '_0900_' ) ) ) {
+			return $sql;
+		}
+		$sql = preg_replace( '/\s*COLLATE\s*=?\s*[`\'"]?[a-z0-9_]+[`\'"]?/i', '', $sql );
+		$sql = preg_replace( '/\butf8mb[34]_(?:0900|uca1400)_[a-z0-9_]+/i', '', $sql );
+		// Exact leftovers that have caused production failures.
+		$sql = str_ireplace(
+			array(
+				'utf8mb3_uca1400_ai_ci',
+				'utf8mb3_uca1400_as_ci',
+				'utf8mb3_uca1400_as_cs',
+				'utf8mb4_uca1400_ai_ci',
+				'utf8mb4_uca1400_as_ci',
+				'utf8mb4_0900_ai_ci',
+				'utf8mb4_0900_as_ci',
+				'utf8mb3_0900_ai_ci',
+			),
+			'',
+			$sql
+		);
+		return $sql;
 	}
 
 	/**

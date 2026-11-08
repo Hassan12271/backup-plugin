@@ -350,7 +350,7 @@ class MWPM_Import {
 				$this->state['stage'] = 'db_replace';
 				break;
 			}
-			$sql = rtrim( $line, "\r\n" );
+			$sql = ltrim( rtrim( $line, "\r\n" ), "\xEF\xBB\xBF \t" );
 			if ( '' !== $sql && 0 !== strncmp( $sql, '--', 2 ) ) {
 				$this->run_sql( $this->prepare_sql( $sql ) );
 			}
