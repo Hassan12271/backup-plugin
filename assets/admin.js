@@ -302,6 +302,11 @@
 			el.textContent = b.label;
 			if (b.href) {
 				el.href = b.href;
+				if (b.download) {
+					el.setAttribute('download', '');
+					el.target = '_blank';
+					el.rel = 'noopener';
+				}
 			} else {
 				el.type = 'button';
 			}
@@ -462,7 +467,7 @@
 	function exportDone(res) {
 		finishState('done', 'Backup ready', res.file + ' · ' + res.size);
 		setButtons([
-			{ label: 'Download backup', primary: true, href: res.download_url },
+			{ label: 'Download backup', primary: true, href: res.download_url, download: true },
 			{ label: 'Close', onClick: function () { closeProgress(true); } }
 		]);
 	}

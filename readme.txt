@@ -1,5 +1,5 @@
 === SiteShift Migration ===
-Contributors: Hassan Raza
+Contributors: Hassan Raxa
 Requires at least: 5.3
 Requires PHP: 7.0
 Stable tag: 1.0.0

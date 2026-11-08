@@ -321,6 +321,7 @@ class MWPM_Import {
 	private function session() {
 		MWPM_DB::query( "SET SESSION sql_mode = 'NO_AUTO_VALUE_ON_ZERO'" );
 		MWPM_DB::query( 'SET SESSION foreign_key_checks = 0' );
+		MWPM_DB::query( 'SET SESSION unique_checks = 0' );
 	}
 
 	private function step_db_import() {
@@ -349,12 +350,63 @@ class MWPM_Import {
 			}
 			$sql = rtrim( $line, "\r\n" );
 			if ( '' !== $sql && 0 !== strncmp( $sql, '--', 2 ) ) {
-				MWPM_DB::query( $this->prepare_sql( $sql ) );
+				$this->run_sql( $this->prepare_sql( $sql ) );
 			}
 			$imp['pos'] = ftell( $fh );
 		}
 
 		fclose( $fh );
+	}
+
+	/**
+	 * Runs one dump statement. CREATE TABLE is retried with progressively
+	 * safer charset/collation rewrites so unknown-collation hosts never abort.
+	 */
+	private function run_sql( $sql ) {
+		try {
+			MWPM_DB::query( $sql );
+			return;
+		} catch ( Exception $e ) {
+			if ( 0 !== strncmp( $sql, 'CREATE TABLE `', 14 ) ) {
+				throw $e;
+			}
+		}
+
+		$fallbacks = array(
+			array(
+				array( '/COLLATE[= ]?[\w]+/', '' ),
+				array( '/DEFAULT CHARSET[= ]?[\w]+/', 'DEFAULT CHARSET=utf8mb4' ),
+				array( '/CHARSET[= ]?utf8mb[34]/', 'CHARSET=utf8mb4' ),
+				array( '/utf8mb[34]/', 'utf8mb4' ),
+			),
+			array(
+				array( '/COLLATE[= ]?[\w]+/', '' ),
+				array( '/DEFAULT CHARSET[= ]?[\w]+/', 'DEFAULT CHARSET=utf8' ),
+				array( '/CHARSET[= ]?utf8mb[34]/', 'CHARSET=utf8' ),
+				array( '/utf8mb[34]/', 'utf8' ),
+			),
+		);
+		foreach ( $fallbacks as $fixes ) {
+			$retry = $sql;
+			foreach ( $fixes as $fix ) {
+				$retry = preg_replace( $fix[0], $fix[1], $retry );
+			}
+			$retry = preg_replace( '/\s+/', ' ', $retry );
+			try {
+				MWPM_DB::query( $retry );
+				return;
+			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement
+				// Try the next fallback.
+			}
+		}
+
+		// Last resort: strip ENGINE/ROW_FORMAT quirks and force a plain InnoDB table.
+		$retry = preg_replace( '/\s+ROW_FORMAT=\w+/i', '', $sql );
+		$retry = preg_replace( '/\s+ENGINE=\w+/i', ' ENGINE=InnoDB', $retry );
+		foreach ( $fallbacks[1] as $fix ) {
+			$retry = preg_replace( $fix[0], $fix[1], $retry );
+		}
+		MWPM_DB::query( $retry );
 	}
 
 	/**
@@ -383,21 +435,26 @@ class MWPM_Import {
 	private function collation_fixes() {
 		if ( ! MWPM_DB::supports_collation( 'utf8mb4_general_ci' ) ) {
 			return array(
-				array( '/utf8mb4_(0900|uca1400)_\w+|utf8mb4_unicode_520_ci/', 'utf8_general_ci' ),
-				array( '/utf8mb4/', 'utf8' ),
+				array( '/utf8mb[34]_(0900|uca1400)_\w+|utf8mb[34]_unicode_520_ci/', 'utf8_general_ci' ),
+				array( '/utf8mb[34]/', 'utf8' ),
 			);
 		}
 
-		$fallback = MWPM_DB::supports_collation( 'utf8mb4_unicode_520_ci' ) ? 'utf8mb4_unicode_520_ci' : 'utf8mb4_unicode_ci';
-		$fixes    = array();
-		if ( ! MWPM_DB::supports_collation( 'utf8mb4_0900_ai_ci' ) ) {
-			$fixes[] = array( '/utf8mb4_0900_\w+/', $fallback );
+		$fixes = array();
+		foreach ( array( 'utf8mb4', 'utf8mb3' ) as $charset ) {
+			$fallback = MWPM_DB::supports_collation( $charset . '_unicode_520_ci' ) ? $charset . '_unicode_520_ci' : $charset . '_unicode_ci';
+			foreach ( array( '0900', 'uca1400' ) as $family ) {
+				if ( ! MWPM_DB::supports_collation( $charset . '_' . $family . '_ai_ci' ) ) {
+					$fixes[] = array( '/' . $charset . '_' . $family . '_\w+/', $fallback );
+				}
+			}
+			if ( $charset . '_unicode_ci' === $fallback ) {
+				$fixes[] = array( '/' . $charset . '_unicode_520_ci/', $charset . '_unicode_ci' );
+			}
 		}
-		if ( ! MWPM_DB::supports_collation( 'utf8mb4_uca1400_ai_ci' ) ) {
-			$fixes[] = array( '/utf8mb4_uca1400_\w+/', $fallback );
-		}
-		if ( 'utf8mb4_unicode_ci' === $fallback ) {
-			$fixes[] = array( '/utf8mb4_unicode_520_ci/', 'utf8mb4_unicode_ci' );
+		// Older MySQL (5.7) only knows the utf8mb3 charset by its "utf8" alias.
+		if ( ! MWPM_DB::supports_collation( 'utf8mb3_general_ci' ) ) {
+			$fixes[] = array( '/utf8mb3/', 'utf8' );
 		}
 		return $fixes;
 	}

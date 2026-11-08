@@ -5,7 +5,8 @@
  * Version:           1.0.0
  * Requires at least: 5.3
  * Requires PHP:      7.0
- * Author:            Hassan Raza
+ * Author:            Hassan Raxa
+ * Author URI:        https://www.hassanraxa.com
  * License:           GPL-2.0-or-later
  * Text Domain:       my-wp-migration
  */

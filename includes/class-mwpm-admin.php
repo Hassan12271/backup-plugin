@@ -68,7 +68,13 @@ class MWPM_Admin {
 	}
 
 	public static function download_url( $file ) {
-		return wp_nonce_url( admin_url( 'admin-post.php?action=mwpm_download&file=' . rawurlencode( $file ) ), 'mwpm_download' );
+		// wp_nonce_url() HTML-escapes & to &amp; — fine in PHP templates, broken when
+		// the URL is put into JSON and assigned to an <a href> from JavaScript.
+		return html_entity_decode(
+			wp_nonce_url( admin_url( 'admin-post.php?action=mwpm_download&file=' . rawurlencode( $file ) ), 'mwpm_download' ),
+			ENT_QUOTES,
+			'UTF-8'
+		);
 	}
 
 	/* ---------------------------------------------------------------------
